@@ -1,4 +1,4 @@
-## Culture: How We Work
+## How We Work
 
 This document outlines the core principles, values, and operating norms for our engineering team.
 
