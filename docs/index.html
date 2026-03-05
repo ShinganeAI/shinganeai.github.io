@@ -222,6 +222,14 @@
             color: rgba(255,255,255,0.7);
         }
 
+        #google-signin-btn {
+            min-width: 240px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .auth-gate.hidden { display: none; }
 
         .app-container { display: flex; min-height: 100vh; }
@@ -333,33 +341,40 @@
                 showAuthGate('Google sign-in is not configured. Set GOOGLE_CLIENT_ID in the page.');
                 return;
             }
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                auto_select: false,
-                callback: function (res) {
-                    const payload = JSON.parse(atob(res.credential.split('.')[1]));
-                    const email = payload.email;
-                    const hd = payload.hd || '';
-                    if (hd.toLowerCase() !== WORKSPACE_DOMAIN.toLowerCase()) {
-                        showAuthGate('Access denied. Please use a @' + WORKSPACE_DOMAIN + ' account.');
-                        google.accounts.id.disableAutoSelect();
-                        return;
+            var btnEl = document.getElementById('google-signin-btn');
+            try {
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    auto_select: false,
+                    callback: function (res) {
+                        const payload = JSON.parse(atob(res.credential.split('.')[1]));
+                        const email = payload.email;
+                        const hd = payload.hd || '';
+                        if (hd.toLowerCase() !== WORKSPACE_DOMAIN.toLowerCase()) {
+                            showAuthGate('Access denied. Please use a @' + WORKSPACE_DOMAIN + ' account.');
+                            google.accounts.id.disableAutoSelect();
+                            return;
+                        }
+                        showApp({ email: email });
+                        if (window.loadPage) {
+                            const page = window.location.hash.slice(1) || 'home';
+                            window.updateActiveLink && window.updateActiveLink(page);
+                            window.loadPage(page);
+                        }
                     }
-                    showApp({ email: email });
-                    if (window.loadPage) {
-                        const page = window.location.hash.slice(1) || 'home';
-                        window.updateActiveLink && window.updateActiveLink(page);
-                        window.loadPage(page);
-                    }
-                }
-            });
-            google.accounts.id.render(document.getElementById('google-signin-btn'), {
-                type: 'standard',
-                theme: 'filled_black',
-                size: 'large',
-                text: 'signin_with',
-                shape: 'rectangular'
-            });
+                });
+                google.accounts.id.renderButton(btnEl, {
+                    type: 'standard',
+                    theme: 'filled_black',
+                    size: 'large',
+                    text: 'signin_with',
+                    shape: 'rectangular'
+                });
+            } catch (e) {
+                authError.textContent = 'Google button error: ' + (e.message || e);
+                authError.style.display = 'block';
+                console.error('Google Sign-In render error', e);
+            }
         }
 
         document.getElementById('sign-out-btn').addEventListener('click', function () {
