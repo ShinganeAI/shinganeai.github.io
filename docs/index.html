@@ -273,7 +273,7 @@
         <p id="auth-error" style="color: #fadbd8; font-size: 14px; display: none;"></p>
     </div>
 
-    <div id="app-container" class="app-container hidden">
+    <div id="app-container" class="app-container hidden" style="display: none !important;">
     <aside class="sidebar">
         <h1>Substrate One</h1>
         <nav>
@@ -314,11 +314,15 @@
             document.getElementById('user-email').textContent = user.email;
             authGate.classList.add('hidden');
             appContainer.classList.remove('hidden');
+            appContainer.style.display = '';
+            appContainer.style.setProperty('display', 'flex', 'important');
             authError.style.display = 'none';
         }
 
         function showAuthGate(msg) {
             appContainer.classList.add('hidden');
+            appContainer.style.display = 'none';
+            appContainer.style.setProperty('display', 'none', 'important');
             authGate.classList.remove('hidden');
             authError.textContent = msg || ''; authError.style.display = msg ? 'block' : 'none';
         }
@@ -365,13 +369,24 @@
             initGoogleSignIn();
         });
 
-        if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-            initGoogleSignIn();
-        } else {
+        function tryInitAuth() {
+            if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                initGoogleSignIn();
+                return true;
+            }
+            return false;
+        }
+        if (!tryInitAuth()) {
             window.addEventListener('load', function () {
-                if (typeof google !== 'undefined' && google.accounts && google.accounts.id) initGoogleSignIn();
-                else { authError.textContent = 'Google sign-in script failed to load.'; authError.style.display = 'block'; }
+                if (!tryInitAuth()) {
+                    authError.textContent = 'Google sign-in failed to load. Check the console or try again.';
+                    authError.style.display = 'block';
+                }
             });
+            var checkGoogle = setInterval(function () {
+                if (tryInitAuth()) clearInterval(checkGoogle);
+            }, 100);
+            setTimeout(function () { clearInterval(checkGoogle); }, 10000);
         }
 
         // Configure marked options
